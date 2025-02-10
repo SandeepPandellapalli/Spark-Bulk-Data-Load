@@ -106,9 +106,9 @@ address_df = DataLoader.read_address(...)
 ### Data Transformations
 
 ##### Applies transformations to raw data:
-- ** get_contract: Extracts contract details from accounts.
-- ** get_relations: Processes party relationships.
-- ** get_address: Structures address data.
+- get_contract: Extracts contract details from accounts.
+- get_relations: Processes party relationships.
+- get_address: Structures address data.
 
 ```bash
 contract_df = Transformations.get_contract(accounts_df)
@@ -119,8 +119,8 @@ relation_address_df = Transformations.get_address(address_df)
 ###  Data Joining
 
 ##### Joins transformed DataFrames:
-- ** Combines party relations with addresses.
-- ** Merges the result with contract data.
+- Combines party relations with addresses.
+- Merges the result with contract data.
 
 ```bash
 party_address_df = Transformations.join_party_address(relations_df, relation_address_df)
@@ -130,13 +130,32 @@ data_df = Transformations.join_contract_party(contract_df, party_address_df)
 ### Final Data Preparation
 
 ##### Adds metadata headers to the DataFrame. Prepares Kafka payload by:
-- ** Selecting the contractIdentifier as the Kafka key.
-- ** Converting the entire row to a JSON string for the value.
+- Selecting the contractIdentifier as the Kafka key.
+- Converting the entire row to a JSON string for the value.
 
 ```bash
 final_df = Transformations.apply_header(spark, data_df)
 kafka_kv_df = final_df.select(col("payload.contractIdentifier.newValue").alias("key"), to_json(struct("*")).alias("value"))
 ```
+
+### Kafka Integration
+
+##### Writes data to Kafka with security configurations:
+- Uses SASL authentication with credentials from the config.
+- Configures bootstrap servers, topic, and security protocols.
+
+
+```bash
+api_key = conf["kafka.api_key"]
+api_secret = conf["kafka.api_secret"]
+kafka_kv_df.write.format("kafka").option(...).save()
+```
+
+### Key Dependencies
+- PySpark: Handles distributed data processing.
+- Hive Integration: Optional, controlled by enable.hive.
+- Kafka: Used as the sink for processed data.
+- Logging: Tracks job progress via Log4j.
 
 
 
