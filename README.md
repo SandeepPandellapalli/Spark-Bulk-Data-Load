@@ -3,6 +3,8 @@ This repository demonstrates how to build an Apache Spark-based bulk data proces
 
 This project is designed to handle large-scale entity data ingestion from an MDM (Master Data Management) Platform and follows a modular, scalable, and reusable architecture.
 
+![Chatbot Features](Projecct_Objective.jpg)
+
 ## **Problem Statement**
 Organizations managing large-scale entity data often struggle with:
 
