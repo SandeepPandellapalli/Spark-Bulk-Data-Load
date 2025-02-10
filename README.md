@@ -43,8 +43,32 @@ We process three key datasets: **Accounts, Parties, and Addresses**, which conta
 | 02-08-2022 | 9823462810 | 45229 Drake Route | Shanefort | 77163 | Canada |
 
 
+## **Final Entity Record Format**
+Each entity record is structured in the following format before being sent to Kafka:
 
+```json
+{
+  "eventHeader": { ... },
+  "keys": [ "account_id" ],
+  "payload": { "account_details", "party_relations", "addresses" }
+}
 
+Spark-Bulk-Data-Load/
+│── conf/
+│   ├── sbdl.conf          # Application configurations
+│   ├── spark.conf         # Spark-specific settings
+│
+│── lib/
+│   ├── Utils.py           # Spark session management
+│   ├── DataLoader.py      # Reads data from Hive
+│   ├── Transformations.py # Data transformation logic
+│   ├── logger.py          # Logging utilities
+│
+│── test_data/             # Sample datasets
+│── sbdl_main.py           # Main Spark job script
+│── Pipfile                # Python dependencies
+│── sbdl_submit.sh         # Shell script for execution
+│── Jenkinsfile            # CI/CD pipeline configuration
 
 
 
