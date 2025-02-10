@@ -75,6 +75,7 @@ job_run_env = sys.argv[1].upper()
 load_date = sys.argv[2]
 job_run_id = "SBDL-" + str(uuid.uuid4())
 ```
+![Chatbot Features](DAG_Viz.jpg)
 
 ### Configuration
 
