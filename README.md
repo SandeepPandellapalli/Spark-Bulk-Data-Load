@@ -52,28 +52,91 @@ Each entity record is structured in the following format before being sent to Ka
   "keys": [ "account_id" ],
   "payload": { "account_details", "party_relations", "addresses" }
 }
+```
 
-Spark-Bulk-Data-Load/
-│── conf/
-│   ├── sbdl.conf          # Application configurations
-│   ├── spark.conf         # Spark-specific settings
-│
-│── lib/
-│   ├── Utils.py           # Spark session management
-│   ├── DataLoader.py      # Reads data from Hive
-│   ├── Transformations.py # Data transformation logic
-│   ├── logger.py          # Logging utilities
-│
-│── test_data/             # Sample datasets
-│── sbdl_main.py           # Main Spark job script
-│── Pipfile                # Python dependencies
-│── sbdl_submit.sh         # Shell script for execution
-│── Jenkinsfile            # CI/CD pipeline configuration
+### Initial Setup & Arguments
 
+##### Validates command-line arguments. Requires two parameters: job_run_env (environment) and load_date.
 
+```bash
+if len(sys.argv) < 3:
+    print("Usage: sbdl {local, qa, prod} {load_date} : Arguments are missing")
+    sys.exit(-1)
+```
 
+### Job Initialization
 
+##### Sets the job environment (e.g., LOCAL, QA, PROD), load date, and generates a unique job ID using uuid.
 
+```bash
+job_run_env = sys.argv[1].upper()
+load_date = sys.argv[2]
+job_run_id = "SBDL-" + str(uuid.uuid4())
+```
+
+### Configuration
+
+##### Loads environment-specific configurations (e.g., Hive settings, Kafka credentials) via ConfigLoader.
+
+```bash
+conf = ConfigLoader.get_config(job_run_env)
+enable_hive = True if conf["enable.hive"] == "true" else False
+hive_db = conf["hive.database"]
+```
+
+### Spark Session & Logging
+
+##### Sets the job environment (e.g., LOCAL, QA, PROD), load date, and generates a unique job ID using uuid.
+
+```bash
+spark = Utils.get_spark_session(job_run_env)
+logger = Log4j(spark)
+```
+
+### Data Loading
+
+##### Loads data from sources (e.g., Hive tables, files) into DataFrames using DataLoader. Behavior depends on job_run_env and Hive configuration.
+
+```bash
+accounts_df = DataLoader.read_accounts(...)
+parties_df = DataLoader.read_parties(...)
+address_df = DataLoader.read_address(...)
+```
+
+### Data Transformations
+
+##### Applies transformations to raw data:
+- ** get_contract: Extracts contract details from accounts.
+- ** get_relations: Processes party relationships.
+- ** get_address: Structures address data.
+
+```bash
+contract_df = Transformations.get_contract(accounts_df)
+relations_df = Transformations.get_relations(parties_df)
+relation_address_df = Transformations.get_address(address_df)
+```
+
+###  Data Joining
+
+##### Joins transformed DataFrames:
+- ** Combines party relations with addresses.
+- ** Merges the result with contract data.
+
+```bash
+party_address_df = Transformations.join_party_address(relations_df, relation_address_df)
+data_df = Transformations.join_contract_party(contract_df, party_address_df)
+```
+
+### Final Data Preparation
+
+##### Adds metadata headers to the DataFrame. Prepares Kafka payload by:
+- ** Selecting the contractIdentifier as the Kafka key.
+- ** Converting the entire row to a JSON string for the value.
+
+```bash
+final_df = Transformations.apply_header(spark, data_df)
+kafka_kv_df = final_df.select(col("payload.contractIdentifier.newValue").alias("key"), to_json(struct("*")).alias("value"))
+```
 
 
 
